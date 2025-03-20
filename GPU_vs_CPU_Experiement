@@ -1,1 +1,62 @@
+ticGlobal = tic;  % Track total script time
+
+% Set up environment reproducibility
+rng(0, 'twister');
+
+% CIFAR-10 training/testing data
+rootFolderTrain = 'C:\Users\harry\OneDrive\Desktop\Project in Math\Session 4\images\images\cifar10Train';
+rootFolderTest  = 'C:\Users\harry\OneDrive\Desktop\Project in Math\Session 4\images\images\cifar10Test';
+
+% Storage for training and testing data
+imdsTrain = imageDatastore(rootFolderTrain, "IncludeSubfolders", true, 'LabelSource', 'foldernames');
+imdsTest  = imageDatastore(rootFolderTest,  "IncludeSubfolders", true, 'LabelSource', 'foldernames');
+
+% Extract class names (folder-based)
+classNames = categories(imdsTrain.Labels);
+
+%% Define the network
+layers = [
+    imageInputLayer([32 32 3])
+    convolution2dLayer(3, 96)
+    reluLayer
+    maxPooling2dLayer(2)
+    fullyConnectedLayer(10)
+    softmaxLayer
+];
+
+%% Training options
+baseOptions = trainingOptions('adam', ...
+    'InitialLearnRate', 0.001, ...
+    'MaxEpochs', 15, ...
+    'Metrics', 'accuracy', ...
+    'LearnRateSchedule', 'piecewise', ...
+    'LearnRateDropFactor', 0.5, ...
+    'LearnRateDropPeriod', 4, ...
+    'Shuffle', 'every-epoch', ...
+    'ValidationData', imdsTest, ...
+    'ValidationFrequency', 400, ...
+    'Verbose', true);
+
+%% Training on CPU
+optsCPU = baseOptions;
+optsCPU.ExecutionEnvironment = 'cpu';
+
+fprintf("Starting CPU training...\n");
+cpuStart = tic;
+[netCPU, infoCPU] = trainnet(imdsTrain, layers, "crossentropy", optsCPU);
+cpuTime = toc(cpuStart);
+fprintf("CPU training time = %.2f seconds.\n\n", cpuTime);
+
+%% Training on GPU
+optsGPU = baseOptions;
+optsGPU.ExecutionEnvironment = 'gpu';
+
+fprintf("Starting GPU training...\n");
+gpuStart = tic;
+[netGPU, infoGPU] = trainnet(imdsTrain, layers, "crossentropy", optsGPU);
+gpuTime = toc(gpuStart);
+fprintf("GPU training time = %.2f seconds.\n\n", gpuTime);
+
+tocGlobalAll = toc(ticGlobal);
+fprintf("Total script time = %.2f seconds.\n", tocGlobalAll);
 
