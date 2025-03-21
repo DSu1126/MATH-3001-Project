@@ -1,1 +1,125 @@
+% ========================================================================
+% The Layers and Filters Experiment
+% ========================================================================
+
+clear; close all; clc;
+ticGlobal = tic;  % Track total script time
+
+% Reproducibility
+rng(0, 'twister');
+
+
+%% CIFAR-10 Data Setup
+
+rootFolderTrain = 'C:\Users\harry\OneDrive\Desktop\Project in Math\Session 4\images\images\cifar10Train';
+rootFolderTest  = 'C:\Users\harry\OneDrive\Desktop\Project in Math\Session 4\images\images\cifar10Test';
+
+imdsTrain = imageDatastore(rootFolderTrain, "IncludeSubfolders", true, 'LabelSource', 'foldernames');
+imdsTest  = imageDatastore(rootFolderTest,  "IncludeSubfolders", true, 'LabelSource', 'foldernames');
+
+classNames = categories(imdsTrain.Labels);
+fprintf('Classes:\n'); 
+disp(classNames);
+
+
+%% Three Network Architectures
+
+
+%Base network
+baseLayers = [
+    imageInputLayer([32 32 3])
+    convolution2dLayer(3, 96)
+    reluLayer
+    maxPooling2dLayer(2)
+    fullyConnectedLayer(10)
+    softmaxLayer
+];
+
+%Network with more layers
+moreLayers = [
+    imageInputLayer([32 32 3])
+
+    convolution2dLayer(3, 128)
+    reluLayer
+    maxPooling2dLayer(2)
+
+    convolution2dLayer(3, 96)
+    reluLayer
+    maxPooling2dLayer(2)
+
+    fullyConnectedLayer(10)
+    softmaxLayer
+];
+
+%Base network but with fewer filters
+fewerFiltersLayers = [
+    imageInputLayer([32 32 3])
+    convolution2dLayer(3, 16)
+    reluLayer
+    maxPooling2dLayer(2)
+    fullyConnectedLayer(10)
+    softmaxLayer
+];
+
+architectures = { ...
+    struct('Name','BaseNet','Layers',baseLayers), ...
+    struct('Name','MoreLayers','Layers',moreLayers), ...
+    struct('Name','FewerFilters','Layers',fewerFiltersLayers) ...
+};
+
+
+%Training Options 
+baseOptions = trainingOptions('adam', ...
+    'InitialLearnRate',    0.001, ...
+    'MaxEpochs',           15, ...
+    'Metrics',             'accuracy', ...        
+    'LearnRateSchedule',   'piecewise', ...
+    'LearnRateDropFactor', 0.5, ...
+    'LearnRateDropPeriod', 4, ...
+    'Shuffle',             'every-epoch', ...
+    'ValidationData',      imdsTest, ...
+    'ValidationFrequency', 400, ...
+    'Verbose',             true, ...
+    'ExecutionEnvironment','gpu');
+
+
+% 4) Train Each Architectures
+
+results = [];  % store info from runs
+
+for i = 1:numel(architectures)
+    archName = architectures{i}.Name;
+    layers   = architectures{i}.Layers;
+
+    fprintf('\n==== Training %s on ====\n', archName);
+    runStart = tic;
+    [net, info] = trainnet(imdsTrain, layers, "crossentropy", baseOptions);
+    runTime = toc(runStart);
+
+    % Store only time-based results
+    runResult.Architecture = archName;
+    runResult.TrainingTime = runTime;
+
+    fprintf('%s training time = %.2f seconds.\n', archName, runTime);
+    results = [results; runResult]; 
+end
+
+tocGlobalAll = toc(ticGlobal);
+fprintf('\nTotal script time = %.2f seconds.\n', tocGlobalAll);
+
+%% Display
+disp('============= SUMMARY OF ALL RUNS =============');
+disp(struct2table(results));
+
+
+%% Bar Chart of Training Times
+archNames = {results.Architecture};
+times     = [results.TrainingTime];
+
+figure('Name','Training Time','NumberTitle','off');
+bar(times);
+set(gca,'XTickLabel',archNames);
+ylabel('Training Time (seconds)');
+title('Training Time by Architecture');
+grid on;
 
