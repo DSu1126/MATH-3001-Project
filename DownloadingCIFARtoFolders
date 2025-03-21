@@ -1,0 +1,84 @@
+function [trainDirectory,testDirectory] = downloadCIFARToFolders(directory,url)
+% This is a helper function to obtain CIFAR-10 and store it locally. 
+% The function copies the training and test data sets into a folder called "cifar10" in
+% the provided directory.
+
+% By default, the data set is downloaded from
+%
+%     https://www.cs.toronto.edu/~kriz/cifar-10-matlab.tar.gz
+if nargin == 1
+    url = 'https://www.cs.toronto.edu/~kriz/cifar-10-matlab.tar.gz';
+end        
+
+% Create the training and test directories where the images will be stored.
+folderName = 'cifar10';
+outputDirectory = fullfile(directory,folderName);
+trainDirectory = fullfile(outputDirectory,'train');
+testDirectory = fullfile(outputDirectory,'test');
+if exist(outputDirectory,'dir')
+   fprintf(['The folder ' folderName ' already exists in the given directory.\n']);
+   return
+end
+
+% Download the MAT files containing the data set in the given
+% directory. 
+unpackedData = fullfile(directory,'cifar-10-batches-mat');
+if ~exist(unpackedData, 'dir')
+    fprintf('Downloading CIFAR-10 data set...');     
+    untar(url,directory); 
+    fprintf('done.\n');
+end
+
+fprintf('Copying CIFAR-10 to folders...'); 
+
+mkdir(outputDirectory);
+mkdir(trainDirectory);
+mkdir(testDirectory);
+
+% Create subdirectories for each of the category folders.
+labelNames = {'airplane','automobile','bird','cat','deer','dog', ...
+    'frog','horse','ship','truck'};
+makeDirectories(trainDirectory,labelNames);
+makeDirectories(testDirectory,labelNames);
+
+% The download creates several MAT files containing the images. Process
+% them and save the images into local folders.
+for i = 1:5
+    fileToLoad = fullfile(unpackedData, ...
+        ['data_batch_' num2str(i) '.mat']);
+    saveImagesToFolders(fileToLoad,trainDirectory,labelNames,(i-1)*10000);
+end
+fileToLoad = fullfile(unpackedData,'test_batch.mat');
+saveImagesToFolders(fileToLoad,testDirectory,labelNames,0);
+
+fprintf('done.\n');
+
+    function makeDirectories(outputPath,directoryNames)
+        % Creates directories in outputPath with the names in
+        % directoryNames.
+        for i = 1:numel(directoryNames)
+            mkdir(fullfile(outputPath,directoryNames{i}));
+        end
+    end
+
+    function saveImagesToFolders(inputFilePath,outputPath,labelNames,nameOffset)
+        % Loads a MAT file containing images from the data set and saves them
+        % to the corresponding category folders.
+        % Load the MAT file into variables.
+        S = load(inputFilePath);
+        data = S.data;
+        labels = S.labels;
+        % The image data in the MAT file needs to be processed with
+        % transpositions, reshaping and permutations.
+        data = data';
+        data = reshape(data, 32,32,3,[]);
+        data = permute(data, [2 1 3 4]);
+        % Iterate through all of the images and save them in the directory.
+        % Use a name based on the index of the image.
+        for i = 1:size(data,4)
+            outputFilename = fullfile(outputPath,labelNames{labels(i)+1}, ...
+                ['image' num2str(i + nameOffset) '.png']);
+            imwrite(data(:,:,:,i),outputFilename);
+        end
+    end
+end
