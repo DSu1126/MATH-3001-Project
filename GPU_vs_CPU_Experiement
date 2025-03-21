@@ -1,3 +1,8 @@
+% ========================================================================
+% The GPU and CPU Comparison Experiment
+% ========================================================================
+
+clear; close all; clc;
 ticGlobal = tic;  % Track total script time
 
 % Set up environment reproducibility
@@ -59,4 +64,3 @@ fprintf("GPU training time = %.2f seconds.\n\n", gpuTime);
 
 tocGlobalAll = toc(ticGlobal);
 fprintf("Total script time = %.2f seconds.\n", tocGlobalAll);
-
