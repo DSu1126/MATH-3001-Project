@@ -1,5 +1,5 @@
 function [trainDirectory,testDirectory] = downloadCIFARToFolders(directory,url)
-% This is a helper function to obtain CIFAR-10 and store it locally. The original site of the dataset is from https://github.com/DSu1126/MATH-3001-Project/tree/main
+% This is a helper function to obtain CIFAR-10 and store it locally.
 % The function copies the training and test data sets into a folder called "cifar10" in
 % the provided directory.
 
