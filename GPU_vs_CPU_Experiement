@@ -9,8 +9,8 @@ ticGlobal = tic;  % Track total script time
 rng(0, 'twister');
 
 % CIFAR-10 training/testing data
-rootFolderTrain = 'C:\Users\harry\OneDrive\Desktop\Project in Math\Session 4\images\images\cifar10Train';
-rootFolderTest  = 'C:\Users\harry\OneDrive\Desktop\Project in Math\Session 4\images\images\cifar10Test';
+rootFolderTrain = 'directory';
+rootFolderTest  = 'directory';
 
 % Storage for training and testing data
 imdsTrain = imageDatastore(rootFolderTrain, "IncludeSubfolders", true, 'LabelSource', 'foldernames');
